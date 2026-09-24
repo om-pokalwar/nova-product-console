@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Eye, Edit2, Trash2, Star } from "lucide-react";
 import { Product } from "@/types/product";
 import { HealthBadge } from "@/components/ui/HealthBadge";
+import { formatINR } from "@/lib/formatters";
 
 interface ProductTableProps {
   products: Product[];
@@ -79,7 +80,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, on
               {/* Price */}
               <td className="py-3 px-4 text-right">
                 <span className="font-bold text-slate-100 text-sm">
-                  ${product.price?.toFixed(2)}
+                  {formatINR(product.price)}
                 </span>
                 {product.discountPercentage && product.discountPercentage > 0 && (
                   <span className="block text-[10px] text-emerald-400 font-medium">

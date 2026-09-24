@@ -6,6 +6,8 @@ import { Eye, Edit2, Trash2, Star } from "lucide-react";
 import { Product } from "@/types/product";
 import { HealthBadge } from "@/components/ui/HealthBadge";
 
+import { formatINR } from "@/lib/formatters";
+
 interface ProductCardProps {
   products: Product[];
   onEdit: (product: Product) => void;
@@ -63,7 +65,7 @@ export const ProductCardGrid: React.FC<ProductCardProps> = ({ products, onEdit, 
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
             <div>
               <span className="text-xs text-slate-500">Price: </span>
-              <span className="font-extrabold text-base text-slate-100">${product.price?.toFixed(2)}</span>
+              <span className="font-extrabold text-base text-slate-100">{formatINR(product.price)}</span>
             </div>
 
             <div className="flex items-center gap-1.5">

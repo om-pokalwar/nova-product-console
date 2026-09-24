@@ -206,7 +206,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block font-semibold text-slate-300 mb-1">
-                Price ($) <span className="text-rose-400">*</span>
+                Price (₹) <span className="text-rose-400">*</span>
               </label>
               <input
                 type="number"

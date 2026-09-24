@@ -25,6 +25,8 @@ import {
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80";
 
+import { formatINR } from "@/lib/formatters";
+
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
@@ -225,7 +227,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 {/* Price Display */}
                 <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex items-baseline gap-3">
                   <span className="text-3xl font-extrabold text-slate-100">
-                    ${product.price?.toFixed(2)}
+                    {formatINR(product.price)}
                   </span>
                   {product.discountPercentage && (
                     <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/30">
