@@ -1,36 +1,145 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NOVA — Product Operations Console
 
-## Getting Started
+> A modern product management admin dashboard built with Next.js, React, Tailwind CSS, and Axios.
 
-First, run the development server:
+---
 
+## 🚀 Live Demo & Setup
+
+### Prerequisites
+- Node.js 18+ installed
+- npm or pnpm package manager
+
+### Local Installation & Running
 ```bash
+# 1. Clone the repository
+git clone <your-repo-url>
+cd React_assi
+
+# 2. Install dependencies
+npm install
+
+# 3. Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 4. Open in browser
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Credentials for Testing
+- **Username:** `emilys`
+- **Password:** `emilyspass`
+*(Pre-filled helper button available on the login page)*
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 💡 Key Architectural Choices
 
-## Learn More
+1. **Shared Axios Instance (`src/lib/axios.ts`)**
+   - Single Axios client configured with base URL `https://dummyjson.com`.
+   - Request interceptor automatically attaches the authentication Bearer token from local session.
+   - Response interceptor normalizes all API errors into a standardized `AppError` shape `{ message, status, retryable }`.
 
-To learn more about Next.js, take a look at the following resources:
+2. **URL as Single Source of Truth (`src/lib/urlState.ts`)**
+   - The view state (search query `q`, `category`, `sort`, `page`, and `limit`) is stored in and driven by URL search parameters.
+   - Reloading or sharing `/products?page=2&limit=20&q=phone&sort=price-asc` reproduces the exact view.
+   - Invalid parameters (e.g., `?page=abc` or `?page=-5`) are safely sanitized to defaults without breaking the UI.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Race-Safe Debounced Search (`src/hooks/useProducts.ts`)**
+   - Search input is debounced using `useDebounce` (400ms delay).
+   - Uses `AbortController` (Axios cancellation) to cancel obsolete pending requests when typing quickly.
+   - Implements request signature validation so older delayed responses (e.g. tested with `&delay=2000`) can **never** overwrite newer query results.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Deterministic Precedence Rule**
+   - When a search query `q` is active, search owns the result set.
+   - When a `category` filter is active without search, category owns the result set.
+   - The UI explicitly displays the active data mode ("⚡ Search Precedence Active").
 
-## Deploy on Vercel
+5. **Local Session Mutation Layer (`src/context/MutationContext.tsx`)**
+   - DummyJSON endpoints (`POST /products/add`, `PUT /products/{id}`, `DELETE /products/{id}`) simulate CRUD operations without persisting them permanently on the server.
+   - NOVA maintains a session-level mutation store (`addedProducts`, `updatedProducts`, `deletedProductIds`) merged into API responses so that all added, updated, and deleted products reflect immediately across the app during the session.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ Project Structure
+
+```text
+src/
+├── app/
+│   ├── layout.tsx              # Root layout with Auth & Mutation providers
+│   ├── page.tsx                # Root redirect to /products or /login
+│   ├── login/
+│   │   └── page.tsx            # Protected authentication page
+│   └── products/
+│       ├── page.tsx            # Products directory with table/cards, search & pagination
+│       └── [id]/
+│           └── page.tsx        # Product details & image gallery page
+├── components/
+│   ├── auth/
+│   │   └── AuthGuard.tsx       # Route guard enforcing authentication
+│   ├── layout/
+│   │   └── Header.tsx          # App header with user profile & logout
+│   ├── products/
+│   │   ├── ProductTable.tsx    # Desktop table layout with health badges
+│   │   ├── ProductCard.tsx     # Mobile card grid layout
+│   │   ├── ProductFilters.tsx  # Search input, category filter & sort controls
+│   │   ├── Pagination.tsx      # Custom pagination & page size dropdown
+│   │   ├── ProductFormModal.tsx# Add/Edit form modal with validation & submission lock
+│   │   └── DeleteConfirmModal.tsx # Delete confirmation popup
+│   └── ui/
+│       ├── HealthBadge.tsx     # Product health cues (low stock / top rated)
+│       ├── Skeleton.tsx        # Loading skeleton placeholders
+│       ├── EmptyState.tsx      # Empty & error state displays with retry
+│       └── Toast.tsx           # Toast feedback notifications
+├── context/
+│   ├── AuthContext.tsx         # Global auth state & login/logout actions
+│   └── MutationContext.tsx     # Local session CRUD mutation store
+├── hooks/
+│   ├── useAuth.ts              # Hook for authentication context
+│   ├── useDebounce.ts          # Custom debouncing hook
+│   └── useProducts.ts          # Race-safe product fetching hook
+├── lib/
+│   ├── axios.ts                # Shared Axios setup & interceptors
+│   └── urlState.ts             # URL state parser & sanitizer
+├── services/
+│   ├── auth.service.ts         # Auth API service calls
+│   └── products.service.ts     # Products API service calls
+└── types/
+    ├── auth.ts                 # User & Auth types
+    └── product.ts              # Product, Review & Error types
+```
+
+---
+
+## 📝 Short Submission Note
+
+### One Problem Faced & How It Was Fixed
+**Problem:** When typing rapidly in search or testing with simulated latency (`&delay=2000`), faster subsequent requests could complete before earlier slow requests, leading to stale data overwriting the user's latest query. In addition, DummyJSON mutations (Add, Edit, Delete) are not saved permanently on their server backend.
+
+**Solution:** 
+1. Implemented `AbortController` cancellation in `useProducts.ts` to abort in-flight requests as soon as a new query starts. Added a request key validation guard (`latestQueryKeyRef`) to discard any response that doesn't match the current query signature.
+2. Built a lightweight session mutation store (`MutationContext.tsx`) using `localStorage` that intercepts product list/detail rendering to seamlessly overlay added items, updated fields, and hide deleted products.
+
+### Where AI Helped
+AI helped accelerate boilerplate creation for TypeScript interfaces, craft responsive Tailwind CSS layouts (desktop table vs mobile card grid), and refine edge-case sanitization for invalid URL parameters (`?page=abc`).
+
+---
+
+## 🎓 Interview Quick-Reference Cheat Sheet
+
+When asked to explain any part of the project live during the interview:
+
+1. **"Where are API calls handled?"**  
+   - "API calls are strictly separated from UI components. They live in `src/services/products.service.ts` and `src/services/auth.service.ts`."
+
+2. **"How does authentication work across requests?"**  
+   - "In `src/lib/axios.ts`, an Axios request interceptor reads the saved token from `localStorage` and appends `Authorization: Bearer <token>` to every outgoing request."
+
+3. **"How did you prevent stale search results?"**  
+   - "Input is debounced by 400ms (`useDebounce`). Before fetching, `useProducts` calls `abort()` on the previous `AbortController`. When a response returns, it checks if `latestQueryKeyRef` still matches before updating state."
+
+4. **"Why custom pagination instead of a library?"**  
+   - "Custom pagination logic in `src/components/products/Pagination.tsx` computes `skip = (page - 1) * limit`, generates smart page numbers with ellipsis, and drives page changes directly through URL parameters."
+
+5. **"How are CRUD changes displayed if DummyJSON doesn't save them?"**  
+   - "DummyJSON only returns a simulated response for POST/PUT/DELETE. We capture those returned objects in `MutationContext.tsx` and merge them into the fetched list so edits remain visible throughout the user session."
