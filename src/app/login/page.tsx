@@ -3,7 +3,7 @@
 import React, { Suspense, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Lock, User, AlertCircle, KeyRound, Sparkles } from "lucide-react";
+import { Loader2, Lock, User, AlertCircle, KeyRound, Sparkles, Eye, EyeOff } from "lucide-react";
 
 function LoginForm() {
   const { login, isSubmitting, error, clearError } = useAuth();
@@ -13,6 +13,7 @@ function LoginForm() {
 
   const [username, setUsername] = useState<string>("emilys");
   const [password, setPassword] = useState<string>("emilyspass");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [localValidationErr, setLocalValidationErr] = useState<string | null>(null);
 
   const handleQuickFill = () => {
@@ -89,7 +90,7 @@ function LoginForm() {
           {/* Username Input */}
           <div>
             <label htmlFor="username-input" className="block font-semibold text-slate-300 mb-1.5">
-              Username
+              Username or Email
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -112,7 +113,7 @@ function LoginForm() {
             </div>
           </div>
 
-          {/* Password Input */}
+          {/* Password Input with Show/Hide Toggle */}
           <div>
             <label htmlFor="password-input" className="block font-semibold text-slate-300 mb-1.5">
               Password
@@ -123,7 +124,7 @@ function LoginForm() {
               </div>
               <input
                 id="password-input"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -132,9 +133,18 @@ function LoginForm() {
                 }}
                 disabled={isSubmitting}
                 placeholder="Enter password"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition focus:outline-none cursor-pointer"
+                title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -159,7 +169,7 @@ function LoginForm() {
         </form>
 
         <div className="pt-2 border-t border-slate-800/80 text-center text-[11px] text-slate-500">
-          Protected Admin Route · Synchronized via Shared Axios Client
+          Protected Admin Route · Supports DummyJSON &amp; Supabase Auth
         </div>
       </div>
     </div>
