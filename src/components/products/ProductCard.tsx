@@ -12,19 +12,27 @@ interface ProductCardProps {
   onDelete: (product: Product) => void;
 }
 
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80";
+
 export const ProductCardGrid: React.FC<ProductCardProps> = ({ products, onEdit, onDelete }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
       {products.map((product) => (
         <div
           key={product.id}
-          className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow-lg flex flex-col justify-between space-y-3.5 hover:border-slate-700 transition"
+          className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow-lg flex flex-col justify-between space-y-3.5 hover:border-slate-700 transition group"
         >
-          {/* Header Image + Health Badge */}
-          <div className="relative w-full h-44 bg-slate-950 rounded-xl border border-slate-800 p-2 overflow-hidden flex items-center justify-center">
+          {/* Header Image + Health Badge (Clickable link to Product Details) */}
+          <Link
+            href={`/products/${product.id}`}
+            className="relative w-full h-44 bg-slate-950 rounded-xl border border-slate-800 p-2 overflow-hidden flex items-center justify-center block group-hover:border-cyan-500/50 transition cursor-pointer"
+          >
             <img
-              src={product.thumbnail || product.images?.[0] || "/placeholder.jpg"}
+              src={product.thumbnail || product.images?.[0] || FALLBACK_IMAGE}
               alt={product.title}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+              }}
               className="w-full h-full object-contain"
               loading="lazy"
             />
@@ -33,9 +41,9 @@ export const ProductCardGrid: React.FC<ProductCardProps> = ({ products, onEdit, 
             </div>
             <div className="absolute top-2 right-2 bg-slate-950/90 border border-slate-800 rounded-full px-2 py-0.5 text-amber-400 font-bold text-xs flex items-center gap-1 shadow">
               <Star className="w-3 h-3 fill-amber-400" />
-              <span>{product.rating?.toFixed(1)}</span>
+              <span>{product.rating?.toFixed(1) || "4.5"}</span>
             </div>
-          </div>
+          </Link>
 
           {/* Details */}
           <div className="space-y-1.5">
@@ -62,19 +70,27 @@ export const ProductCardGrid: React.FC<ProductCardProps> = ({ products, onEdit, 
               <Link
                 href={`/products/${product.id}`}
                 className="p-2 rounded-lg bg-slate-800/90 text-cyan-400 hover:bg-slate-700 transition"
-                title="View Details"
+                title="View Product Details"
               >
                 <Eye className="w-4 h-4" />
               </Link>
               <button
-                onClick={() => onEdit(product)}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(product);
+                }}
                 className="p-2 rounded-lg bg-slate-800/90 text-amber-400 hover:bg-slate-700 transition cursor-pointer"
                 title="Edit Product"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => onDelete(product)}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(product);
+                }}
                 className="p-2 rounded-lg bg-slate-800/90 text-rose-400 hover:bg-slate-700 transition cursor-pointer"
                 title="Delete Product"
               >

@@ -12,6 +12,8 @@ interface ProductTableProps {
   onDelete: (product: Product) => void;
 }
 
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80";
+
 export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, onDelete }) => {
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 shadow-xl hidden md:block">
@@ -36,14 +38,20 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, on
               {/* Image & Title */}
               <td className="py-3 px-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center p-1 group-hover:border-cyan-500/50 transition">
+                  <Link
+                    href={`/products/${product.id}`}
+                    className="w-11 h-11 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center p-1 group-hover:border-cyan-500/50 transition cursor-pointer"
+                  >
                     <img
-                      src={product.thumbnail || product.images?.[0] || "/placeholder.jpg"}
+                      src={product.thumbnail || product.images?.[0] || FALLBACK_IMAGE}
                       alt={product.title}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                      }}
                       className="w-full h-full object-contain"
                       loading="lazy"
                     />
-                  </div>
+                  </Link>
                   <div className="min-w-0 max-w-[220px]">
                     <Link
                       href={`/products/${product.id}`}
@@ -110,7 +118,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, on
                   </Link>
 
                   <button
-                    onClick={() => onEdit(product)}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(product);
+                    }}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition cursor-pointer"
                     title="Edit Product"
                   >
@@ -118,7 +130,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, on
                   </button>
 
                   <button
-                    onClick={() => onDelete(product)}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(product);
+                    }}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
                     title="Delete Product"
                   >

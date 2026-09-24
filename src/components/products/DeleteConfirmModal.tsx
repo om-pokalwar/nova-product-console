@@ -7,12 +7,14 @@ import { productsService } from "@/services/products.service";
 import { useMutationStore } from "@/context/MutationContext";
 
 interface DeleteConfirmModalProps {
+  isOpen: boolean;
   product: Product | null;
   onClose: () => void;
   onSuccess: (message: string) => void;
 }
 
 export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
+  isOpen,
   product,
   onClose,
   onSuccess,
@@ -21,7 +23,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  if (!product) return null;
+  if (!isOpen || !product) return null;
 
   const handleDelete = async () => {
     if (isDeleting) return; // Lock duplicate clicks
@@ -35,7 +37,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       setIsDeleting(false);
       onSuccess(`Product "${product.title}" has been deleted.`);
       onClose();
-    } catch (err: any) {
+    } catch {
       // Even if server returns error or simulated delete, apply local deletion for continuous workflow
       deleteLocalProduct(product.id);
       setIsDeleting(false);
@@ -54,7 +56,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -75,7 +77,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
           >
             Cancel
           </button>

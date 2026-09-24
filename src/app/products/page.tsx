@@ -191,8 +191,12 @@ function ProductsContent() {
       />
 
       <DeleteConfirmModal
+        isOpen={deleteModalOpen}
         product={productToDelete}
-        onClose={() => setDeleteModalOpen(false)}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setProductToDelete(null);
+        }}
         onSuccess={(msg) => showToast("Deleted", msg, "info")}
       />
 

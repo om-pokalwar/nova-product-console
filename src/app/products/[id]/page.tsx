@@ -16,22 +16,21 @@ import { Product } from "@/types/product";
 import {
   ArrowLeft,
   Star,
-  Tag,
-  Package,
   ShieldAlert,
   Edit2,
   Trash2,
-  CheckCircle,
   Truck,
   RotateCcw,
 } from "lucide-react";
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
   const router = useRouter();
 
-  const { getSingleProductWithMutations, isProductDeleted } = useMutationStore();
+  const { getSingleProductWithMutations, isProductDeleted, mutations } = useMutationStore();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
@@ -56,21 +55,30 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     setIsLoading(true);
     setNotFound(false);
 
+    // First check if product was added locally in current session
+    const addedLocal = mutations.addedProducts.find((p) => String(p.id) === String(productId));
+    if (addedLocal) {
+      const finalProduct = getSingleProductWithMutations(addedLocal);
+      setProduct(finalProduct);
+      setSelectedImage(finalProduct.thumbnail || finalProduct.images?.[0] || FALLBACK_IMAGE);
+      setIsLoading(false);
+      return;
+    }
+
     productsService
       .getProductById(productId)
       .then((data) => {
         // Overlay any session updates
         const finalProduct = getSingleProductWithMutations(data);
         setProduct(finalProduct);
-        setSelectedImage(finalProduct.thumbnail || finalProduct.images?.[0] || "");
+        setSelectedImage(finalProduct.thumbnail || finalProduct.images?.[0] || FALLBACK_IMAGE);
         setIsLoading(false);
       })
-      .catch((err) => {
-        // Check if there is an added product in local mutations with date-based ID
+      .catch(() => {
         setNotFound(true);
         setIsLoading(false);
       });
-  }, [productId, getSingleProductWithMutations, isProductDeleted]);
+  }, [productId, getSingleProductWithMutations, isProductDeleted, mutations.addedProducts]);
 
   const showToast = (title: string, message?: string) => {
     setToast({
@@ -100,6 +108,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {product && !notFound && (
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setEditModalOpen(true)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition cursor-pointer"
                 >
@@ -107,6 +116,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <span>Edit</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDeleteModalOpen(true)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition cursor-pointer"
                 >
@@ -145,8 +155,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <div className="space-y-4">
                 <div className="w-full h-96 bg-slate-900/90 rounded-3xl border border-slate-800 p-6 overflow-hidden flex items-center justify-center relative shadow-2xl">
                   <img
-                    src={selectedImage || product.thumbnail || "/placeholder.jpg"}
+                    src={selectedImage || product.thumbnail || FALLBACK_IMAGE}
                     alt={product.title}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                    }}
                     className="max-h-full max-w-full object-contain"
                   />
                   <div className="absolute top-4 left-4">
@@ -160,6 +173,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     {product.images.map((imgUrl, idx) => (
                       <button
                         key={idx}
+                        type="button"
                         onClick={() => setSelectedImage(imgUrl)}
                         className={`w-20 h-20 rounded-2xl bg-slate-900 border p-1 overflow-hidden shrink-0 transition ${
                           selectedImage === imgUrl
@@ -167,7 +181,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             : "border-slate-800 opacity-60 hover:opacity-100"
                         }`}
                       >
-                        <img src={imgUrl} alt={`Thumbnail ${idx}`} className="w-full h-full object-contain" />
+                        <img
+                          src={imgUrl}
+                          alt={`Thumbnail ${idx}`}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                          }}
+                          className="w-full h-full object-contain"
+                        />
                       </button>
                     ))}
                   </div>
@@ -194,7 +215,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center gap-4 text-xs">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-amber-400 font-bold">
                     <Star className="w-4 h-4 fill-amber-400" />
-                    <span>{product.rating?.toFixed(1)} / 5.0</span>
+                    <span>{product.rating?.toFixed(1) || "4.5"} / 5.0</span>
                   </div>
                   <div className="text-slate-300 font-medium">
                     Stock: <span className="font-bold text-slate-100">{product.stock} items available</span>
@@ -280,6 +301,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             />
 
             <DeleteConfirmModal
+              isOpen={deleteModalOpen}
               product={product}
               onClose={() => setDeleteModalOpen(false)}
               onSuccess={() => {
