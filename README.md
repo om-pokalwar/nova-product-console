@@ -1,6 +1,6 @@
 # NOVA — Product Operations Console
 
-> A modern product management admin dashboard built with Next.js, React, Tailwind CSS, and Axios.
+> A modern product management admin dashboard built with Next.js 16, React 19, Tailwind CSS 4, Axios, and Supabase.
 
 ---
 
@@ -8,21 +8,25 @@
 
 ### Prerequisites
 - Node.js 18+ installed
-- npm or pnpm package manager
+- npm package manager
 
 ### Local Installation & Running
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
-cd React_assi
+git clone https://github.com/om-pokalwar/nova-product-console.git
+cd nova-product-console
 
 # 2. Install dependencies
 npm install
 
-# 3. Start development server
+# 3. (Optional) Configure Supabase credentials
+#    Copy .env.example to .env.local and add your Supabase project URL and anon key
+cp .env.example .env.local
+
+# 4. Start development server
 npm run dev
 
-# 4. Open in browser
+# 5. Open in browser
 # Open http://localhost:3000
 ```
 
@@ -59,6 +63,11 @@ npm run dev
    - DummyJSON endpoints (`POST /products/add`, `PUT /products/{id}`, `DELETE /products/{id}`) simulate CRUD operations without persisting them permanently on the server.
    - NOVA maintains a session-level mutation store (`addedProducts`, `updatedProducts`, `deletedProductIds`) merged into API responses so that all added, updated, and deleted products reflect immediately across the app during the session.
 
+6. **Supabase Integration (`src/lib/supabase.ts`)**
+   - When Supabase credentials are provided via environment variables, authentication supports both DummyJSON and Supabase sign-in.
+   - Product CRUD operations sync data to Supabase in parallel with DummyJSON, with graceful fallback if Supabase is unavailable.
+   - The integration is fully optional — the app works standalone with DummyJSON when Supabase is not configured.
+
 ---
 
 ## 🛠️ Project Structure
@@ -68,6 +77,7 @@ src/
 ├── app/
 │   ├── layout.tsx              # Root layout with Auth & Mutation providers
 │   ├── page.tsx                # Root redirect to /products or /login
+│   ├── globals.css             # Tailwind CSS global styles
 │   ├── login/
 │   │   └── page.tsx            # Protected authentication page
 │   └── products/
@@ -95,15 +105,16 @@ src/
 │   ├── AuthContext.tsx         # Global auth state & login/logout actions
 │   └── MutationContext.tsx     # Local session CRUD mutation store
 ├── hooks/
-│   ├── useAuth.ts              # Hook for authentication context
 │   ├── useDebounce.ts          # Custom debouncing hook
 │   └── useProducts.ts          # Race-safe product fetching hook
 ├── lib/
 │   ├── axios.ts                # Shared Axios setup & interceptors
+│   ├── supabase.ts             # Supabase client (optional integration)
+│   ├── formatters.ts           # Currency formatting (INR ₹)
 │   └── urlState.ts             # URL state parser & sanitizer
 ├── services/
-│   ├── auth.service.ts         # Auth API service calls
-│   └── products.service.ts     # Products API service calls
+│   ├── auth.service.ts         # Auth API service calls (DummyJSON + Supabase)
+│   └── products.service.ts     # Products API service calls (DummyJSON + Supabase)
 └── types/
     ├── auth.ts                 # User & Auth types
     └── product.ts              # Product, Review & Error types
@@ -143,3 +154,6 @@ When asked to explain any part of the project live during the interview:
 
 5. **"How are CRUD changes displayed if DummyJSON doesn't save them?"**  
    - "DummyJSON only returns a simulated response for POST/PUT/DELETE. We capture those returned objects in `MutationContext.tsx` and merge them into the fetched list so edits remain visible throughout the user session."
+
+6. **"How does Supabase integration work?"**  
+   - "Supabase is optional. The client in `src/lib/supabase.ts` only initializes if credentials are set. `auth.service.ts` tries Supabase first for email logins, otherwise falls back to DummyJSON. `products.service.ts` syncs CRUD to Supabase in parallel."

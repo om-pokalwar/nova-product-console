@@ -297,8 +297,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               onClose={() => setEditModalOpen(false)}
               onSuccess={(msg) => {
                 showToast("Updated", msg);
-                // Refresh local product view state
-                setProduct({ ...product, ...useMutationStore().mutations.updatedProducts[product.id] });
+                // Refresh product view with latest mutations
+                const localUpdates = mutations.updatedProducts[product.id];
+                if (localUpdates) {
+                  setProduct({ ...product, ...localUpdates });
+                }
               }}
             />
 
